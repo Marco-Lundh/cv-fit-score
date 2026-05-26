@@ -1,5 +1,7 @@
 import io
+from http import HTTPStatus
 from typing import Literal
+
 
 from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import HTMLResponse
@@ -34,14 +36,16 @@ async def analyze_text(body: AnalyzeTextRequest):
         job_description = await scrape_job_description(body.job_url)
     except Exception as exc:
         raise HTTPException(
-            status_code=422, detail=f"Failed to fetch job URL: {exc}"
+            status_code=HTTPStatus.UNPROCESSABLE_ENTITY,
+            detail=f"Failed to fetch job URL: {exc}",
         ) from exc
 
     try:
         return await analyze_fit(body.cv_text, job_description, body.language)
     except Exception as exc:
         raise HTTPException(
-            status_code=500, detail=f"LLM analysis failed: {exc}"
+            status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+            detail=f"LLM analysis failed: {exc}",
         ) from exc
 
 
@@ -59,27 +63,33 @@ async def analyze_pdf(
 ):
     if cv_file.content_type != "application/pdf":
         raise HTTPException(
-            status_code=422, detail="Only PDF files are accepted."
+            status_code=HTTPStatus.UNPROCESSABLE_ENTITY,
+            detail="Only PDF files are accepted.",
         )
 
     file_bytes = await cv_file.read()
     try:
         cv_text = extract_text_from_pdf(io.BytesIO(file_bytes))
     except ValueError as exc:
-        raise HTTPException(status_code=422, detail=str(exc)) from exc
+        raise HTTPException(
+            status_code=HTTPStatus.UNPROCESSABLE_ENTITY,
+            detail=str(exc),
+        ) from exc
 
     try:
         job_description = await scrape_job_description(job_url)
     except Exception as exc:
         raise HTTPException(
-            status_code=422, detail=f"Failed to fetch job URL: {exc}"
+            status_code=HTTPStatus.UNPROCESSABLE_ENTITY,
+            detail=f"Failed to fetch job URL: {exc}",
         ) from exc
 
     try:
         return await analyze_fit(cv_text, job_description, language)
     except Exception as exc:
         raise HTTPException(
-            status_code=500, detail=f"LLM analysis failed: {exc}"
+            status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+            detail=f"LLM analysis failed: {exc}",
         ) from exc
 
 

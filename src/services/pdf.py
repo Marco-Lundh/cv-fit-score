@@ -1,9 +1,9 @@
-from typing import BinaryIO
+from io import BytesIO
 
 import pdfplumber
 
 
-def extract_text_from_pdf(file_obj: BinaryIO) -> str:
+def extract_text_from_pdf(file_obj: BytesIO) -> str:
     with pdfplumber.open(file_obj) as pdf:
         pages = [page.extract_text() or "" for page in pdf.pages]
     text = "\n".join(pages).strip()

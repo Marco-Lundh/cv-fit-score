@@ -1,6 +1,6 @@
+from http import HTTPStatus
 from unittest.mock import AsyncMock, patch
 
-import pytest
 from httpx import ASGITransport, AsyncClient
 
 from src.main import app
@@ -20,7 +20,7 @@ async def test_health_check():
         transport=ASGITransport(app=app), base_url="http://test"
     ) as client:
         response = await client.get("/health")
-    assert response.status_code == 200
+    assert response.status_code == HTTPStatus.OK
     assert response.json() == {"status": "ok"}
 
 
@@ -29,7 +29,7 @@ async def test_index_returns_html():
         transport=ASGITransport(app=app), base_url="http://test"
     ) as client:
         response = await client.get("/")
-    assert response.status_code == 200
+    assert response.status_code == HTTPStatus.OK
     assert "text/html" in response.headers["content-type"]
 
 
@@ -57,7 +57,7 @@ async def test_analyze_text_success():
                     "language": "en",
                 },
             )
-    assert response.status_code == 200
+    assert response.status_code == HTTPStatus.OK
     assert response.json()["match_score"] == 72
 
 
@@ -72,7 +72,7 @@ async def test_analyze_text_cv_too_short():
                 "job_url": "https://example.com/jobs/1",
             },
         )
-    assert response.status_code == 422
+    assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
 
 
 async def test_analyze_text_scrape_failure_returns_422():
@@ -91,7 +91,7 @@ async def test_analyze_text_scrape_failure_returns_422():
                     "job_url": "https://example.com/jobs/1",
                 },
             )
-    assert response.status_code == 422
+    assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
     assert "Failed to fetch job URL" in response.json()["detail"]
 
 
@@ -104,7 +104,7 @@ async def test_analyze_pdf_wrong_content_type():
             data={"job_url": "https://example.com/jobs/1"},
             files={"cv_file": ("cv.txt", b"not a pdf", "text/plain")},
         )
-    assert response.status_code == 422
+    assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
     assert "PDF" in response.json()["detail"]
 
 
@@ -135,5 +135,5 @@ async def test_analyze_pdf_success():
                     "cv_file": ("cv.pdf", b"fake pdf bytes", "application/pdf")
                 },
             )
-    assert response.status_code == 200
+    assert response.status_code == HTTPStatus.OK
     assert response.json()["match_score"] == 72

@@ -1,6 +1,8 @@
 import json
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import pytest
+
 from src.models import FitScoreResponse
 from src.services.llm import analyze_fit
 
@@ -13,9 +15,11 @@ _MOCK_DATA = {
 }
 
 
-def _make_completion(data: dict) -> MagicMock:
+def _make_completion(data: dict | None) -> MagicMock:
     completion = MagicMock()
-    completion.choices[0].message.content = json.dumps(data)
+    completion.choices[0].message.content = (
+        json.dumps(data) if data is not None else None
+    )
     return completion
 
 
@@ -89,3 +93,16 @@ async def test_analyze_fit_user_message_includes_cv_and_job():
     user_content = captured[1]["content"]
     assert "My unique CV text here." in user_content
     assert "Unique job description here." in user_content
+
+
+async def test_analyze_fit_raises_on_empty_response():
+    mock_client = AsyncMock()
+    mock_client.chat.completions.create = AsyncMock(
+        return_value=_make_completion(None)
+    )
+    with patch("src.services.llm.AsyncGroq", return_value=mock_client):
+        with pytest.raises(ValueError, match="empty response"):
+            await analyze_fit(
+                cv_text="CV content here.",
+                job_description="Job description here.",
+            )

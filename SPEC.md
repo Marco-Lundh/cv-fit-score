@@ -3,7 +3,6 @@
 ## Purpose
 
 Portfolio project demonstrating AI integration in a production-grade backend.
-Target audience: recruiters and engineers reviewing the GitHub repository.
 
 ---
 

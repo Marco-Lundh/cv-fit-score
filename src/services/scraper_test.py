@@ -46,11 +46,12 @@ async def test_scrape_returns_cleaned_text():
 
 
 async def test_scrape_strips_script_and_style_tags():
+    body = "We need a senior Python engineer for backend work. " * 5
     html = (
         "<html><body>"
         "<script>alert('xss')</script>"
         "<style>.cls { color: red; }</style>"
-        "<p>" + ("We need a senior Python engineer for backend work. " * 5) + "</p>"
+        f"<p>{body}</p>"
         "</body></html>"
     )
     mock_client = _make_mock_client(html)

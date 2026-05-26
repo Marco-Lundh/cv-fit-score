@@ -10,6 +10,7 @@ _HEADERS = {
 }
 _TIMEOUT = 15.0
 _MAX_CHARS = 8000
+_MINIMUM_CONTENT_LENGTH = 100
 
 
 async def scrape_job_description(url: str) -> str:
@@ -28,7 +29,7 @@ async def scrape_job_description(url: str) -> str:
     lines = [line.strip() for line in text.splitlines() if line.strip()]
     result = "\n".join(lines)[:_MAX_CHARS]
 
-    if len(result) < 100:
+    if len(result) < _MINIMUM_CONTENT_LENGTH:
         raise ValueError(
             "Could not extract meaningful content from the job URL."
         )

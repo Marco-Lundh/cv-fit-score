@@ -8,6 +8,7 @@ def test_analyze_text_request_valid():
     req = AnalyzeTextRequest(
         cv_text="a" * 50,
         job_url="https://example.com/jobs/1",
+        language="en",
     )
     assert req.language == "en"
 
@@ -17,6 +18,7 @@ def test_analyze_text_request_cv_too_short():
         AnalyzeTextRequest(
             cv_text="short",
             job_url="https://example.com/jobs/1",
+            language="en",
         )
 
 
@@ -34,7 +36,7 @@ def test_analyze_text_request_invalid_language():
         AnalyzeTextRequest(
             cv_text="a" * 50,
             job_url="https://example.com/jobs/1",
-            language="fr",
+            language="fr",  # type: ignore[arg-type]
         )
 
 

@@ -2,10 +2,12 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
+_MIN_CV_LENGTH = 50
+
 
 class AnalyzeTextRequest(BaseModel):
     cv_text: str = Field(
-        ..., min_length=50, description="Full CV content as plain text"
+        ..., min_length=_MIN_CV_LENGTH, description="Full CV content as plain text"
     )
     job_url: str = Field(..., description="URL to the job posting")
     language: Literal["en", "sv"] = Field(
@@ -14,9 +16,13 @@ class AnalyzeTextRequest(BaseModel):
 
 
 class FitScoreResponse(BaseModel):
-    match_score: int = Field(..., ge=0, le=100, description="Overall fit score 0–100")
+    match_score: int = Field(
+        ..., ge=0, le=100, description="Overall fit score 0–100"
+    )
     strengths: list[str] = Field(..., description="Key matching strengths")
-    weaknesses: list[str] = Field(..., description="Gaps or missing qualifications")
+    weaknesses: list[str] = Field(
+        ..., description="Gaps or missing qualifications"
+    )
     recommendations: list[str] = Field(
         ..., description="Actionable steps to improve fit"
     )

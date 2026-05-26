@@ -3,10 +3,11 @@ from typing import Literal
 
 from groq import AsyncGroq
 
-from src.config import settings
+from src.config import get_settings
 from src.models import FitScoreResponse
 
 _MODEL = "llama-3.3-70b-versatile"
+_TEMPERATURE = 0.3
 
 _LANGUAGE_INSTRUCTION = {
     "en": (
@@ -48,7 +49,7 @@ async def analyze_fit(
     job_description: str,
     language: Literal["en", "sv"] = "en",
 ) -> FitScoreResponse:
-    client = AsyncGroq(api_key=settings.groq_api_key)
+    client = AsyncGroq(api_key=get_settings().groq_api_key)
 
     system_prompt = _SYSTEM_PROMPT.format(
         language_instruction=_LANGUAGE_INSTRUCTION[language]
@@ -66,9 +67,11 @@ async def analyze_fit(
             {"role": "user", "content": user_message},
         ],
         response_format={"type": "json_object"},
-        temperature=0.3,
+        temperature=_TEMPERATURE,
     )
 
     raw = completion.choices[0].message.content
+    if raw is None:
+        raise ValueError("LLM returned an empty response")
     data = json.loads(raw)
     return FitScoreResponse(**data)
