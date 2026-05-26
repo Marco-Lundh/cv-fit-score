@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CV Fit Score</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --border: #2a2d3e;
+      --accent: #6366f1;
+      --accent-hover: #818cf8;
+      --text: #e2e4f0;
+      --muted: #8b8fa8;
+      --success: #22c55e;
+      --warn: #f59e0b;
+      --danger: #ef4444;
+      --radius: 12px;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', system-ui, sans-serif;
+      min-height: 100vh;
+      display: grid;
+      place-items: start center;
+      padding: 3rem 1rem;
+    }
+
+    .container { width: 100%; max-width: 680px; }
+
+    header { text-align: center; margin-bottom: 2.5rem; }
+    header h1 {
+      font-size: 2.25rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      background: linear-gradient(135deg, #818cf8, #6366f1, #a855f7);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    header p { color: var(--muted); margin-top: 0.5rem; font-size: 0.95rem; }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 2rem;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 0.25rem;
+      background: var(--bg);
+      border-radius: 8px;
+      padding: 4px;
+      margin-bottom: 1.75rem;
+    }
+    .tab {
+      flex: 1;
+      padding: 0.5rem 1rem;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.875rem;
+      font-weight: 500;
+      background: transparent;
+      color: var(--muted);
+      transition: all 0.15s ease;
+    }
+    .tab.active { background: var(--surface); color: var(--text); box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
+
+    .form-panel { display: none; }
+    .form-panel.active { display: block; }
+
+    .field { margin-bottom: 1.25rem; }
+    label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+      margin-bottom: 0.5rem;
+    }
+    input[type="text"], input[type="url"], textarea {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 0.9rem;
+      padding: 0.75rem 1rem;
+      outline: none;
+      transition: border-color 0.15s;
+      font-family: inherit;
+    }
+    input[type="text"]:focus, input[type="url"]:focus, textarea:focus {
+      border-color: var(--accent);
+    }
+    textarea { resize: vertical; min-height: 160px; }
+
+    input[type="file"] {
+      width: 100%;
+      background: var(--bg);
+      border: 1px dashed var(--border);
+      border-radius: 8px;
+      color: var(--muted);
+      font-size: 0.875rem;
+      padding: 1.25rem 1rem;
+      cursor: pointer;
+      transition: border-color 0.15s;
+    }
+    input[type="file"]:hover { border-color: var(--accent); }
+
+    .btn {
+      width: 100%;
+      padding: 0.875rem;
+      background: var(--accent);
+      color: #fff;
+      font-size: 0.95rem;
+      font-weight: 600;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+      margin-top: 0.5rem;
+    }
+    .btn:hover { background: var(--accent-hover); }
+    .btn:active { transform: scale(0.98); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .result { margin-top: 2rem; display: none; }
+    .result.visible { display: block; }
+
+    .score-ring {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-bottom: 1.75rem;
+    }
+    .score-circle {
+      width: 110px;
+      height: 110px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      font-size: 2rem;
+      font-weight: 800;
+      border: 4px solid var(--accent);
+      margin-bottom: 0.5rem;
+      background: radial-gradient(circle, rgba(99,102,241,0.1), transparent);
+    }
+    .score-label { color: var(--muted); font-size: 0.85rem; }
+
+    .section { margin-bottom: 1.25rem; }
+    .section h3 {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 0.75rem;
+    }
+    .section.strengths h3 { color: var(--success); }
+    .section.weaknesses h3 { color: var(--danger); }
+    .section.recommendations h3 { color: var(--warn); }
+    .section.summary h3 { color: var(--accent-hover); }
+
+    ul { list-style: none; display: flex; flex-direction: column; gap: 0.4rem; }
+    ul li {
+      font-size: 0.9rem;
+      padding: 0.6rem 0.875rem;
+      background: var(--bg);
+      border-radius: 6px;
+      border-left: 3px solid transparent;
+      line-height: 1.5;
+    }
+    .strengths ul li { border-color: var(--success); }
+    .weaknesses ul li { border-color: var(--danger); }
+    .recommendations ul li { border-color: var(--warn); }
+
+    .summary-text {
+      font-size: 0.9rem;
+      line-height: 1.7;
+      color: var(--muted);
+      background: var(--bg);
+      border-radius: 6px;
+      padding: 0.875rem;
+    }
+
+    .error-msg {
+      background: rgba(239,68,68,0.1);
+      border: 1px solid rgba(239,68,68,0.3);
+      color: #fca5a5;
+      border-radius: 8px;
+      padding: 0.875rem 1rem;
+      font-size: 0.875rem;
+      margin-top: 1rem;
+      display: none;
+    }
+    .error-msg.visible { display: block; }
+
+    .spinner {
+      display: none;
+      text-align: center;
+      color: var(--muted);
+      margin-top: 1rem;
+      font-size: 0.875rem;
+    }
+    .spinner.visible { display: block; }
+    .spinner::before { content: "⏳ "; }
+
+    .lang-toggle {
+      display: flex;
+      gap: 0.25rem;
+      background: var(--bg);
+      border-radius: 8px;
+      padding: 4px;
+      margin-bottom: 1.5rem;
+      width: fit-content;
+    }
+    .lang-btn {
+      padding: 0.35rem 0.875rem;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      font-weight: 600;
+      background: transparent;
+      color: var(--muted);
+      transition: all 0.15s ease;
+      letter-spacing: 0.02em;
+    }
+    .lang-btn.active {
+      background: var(--surface);
+      color: var(--text);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    }
+
+    footer {
+      text-align: center;
+      margin-top: 2rem;
+      color: var(--muted);
+      font-size: 0.8rem;
+    }
+    footer a { color: var(--accent-hover); text-decoration: none; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>CV Fit Score</h1>
+      <p>Paste your CV and a job URL — get an honest AI-powered fit analysis in seconds.</p>
+    </header>
+
+    <div class="card">
+      <div class="tabs">
+        <button class="tab active" onclick="switchTab('pdf')">PDF Upload</button>
+        <button class="tab" onclick="switchTab('text')">Plain Text</button>
+      </div>
+
+      <div style="display:flex; align-items:center; gap:0.75rem; margin-bottom:1.5rem;">
+        <span style="font-size:0.75rem; font-weight:600; text-transform:uppercase; letter-spacing:0.06em; color:var(--muted);">Result language</span>
+        <div class="lang-toggle" style="margin-bottom:0;">
+          <button type="button" class="lang-btn active" onclick="setLanguage('en', this)">English</button>
+          <button type="button" class="lang-btn" onclick="setLanguage('sv', this)">Svenska</button>
+        </div>
+      </div>
+
+      <!-- PDF form -->
+      <div id="panel-pdf" class="form-panel active">
+        <form id="form-pdf" onsubmit="submitPdf(event)" enctype="multipart/form-data">
+          <div class="field">
+            <label for="job-url-pdf">Job Posting URL</label>
+            <input type="url" id="job-url-pdf" placeholder="https://example.com/jobs/123" required />
+          </div>
+          <div class="field">
+            <label for="cv-file">CV (PDF)</label>
+            <input type="file" id="cv-file" accept="application/pdf" required />
+          </div>
+          <button class="btn" type="submit">Analyze fit</button>
+        </form>
+      </div>
+
+      <!-- Text form -->
+      <div id="panel-text" class="form-panel">
+        <form id="form-text" onsubmit="submitText(event)">
+          <div class="field">
+            <label for="job-url-text">Job Posting URL</label>
+            <input type="url" id="job-url-text" placeholder="https://example.com/jobs/123" required />
+          </div>
+          <div class="field">
+            <label for="cv-text">Your CV</label>
+            <textarea id="cv-text" placeholder="Paste your full CV here..." required></textarea>
+          </div>
+          <button class="btn" type="submit">Analyze fit</button>
+        </form>
+      </div>
+
+      <div class="spinner" id="spinner">Analyzing with AI — this takes a few seconds…</div>
+      <div class="error-msg" id="error-msg"></div>
+    </div>
+
+    <div class="card result" id="result">
+      <div class="score-ring">
+        <div class="score-circle" id="score-circle">–</div>
+        <span class="score-label">Match Score</span>
+      </div>
+
+      <div class="section summary">
+        <h3>Summary</h3>
+        <p class="summary-text" id="summary-text"></p>
+      </div>
+
+      <div class="section strengths">
+        <h3>Strengths</h3>
+        <ul id="strengths-list"></ul>
+      </div>
+
+      <div class="section weaknesses">
+        <h3>Weaknesses</h3>
+        <ul id="weaknesses-list"></ul>
+      </div>
+
+      <div class="section recommendations">
+        <h3>Recommendations</h3>
+        <ul id="recommendations-list"></ul>
+      </div>
+    </div>
+
+    <footer>
+      Built with FastAPI + Groq · <a href="/docs" target="_blank">API Docs →</a>
+    </footer>
+  </div>
+
+  <script>
+    let selectedLanguage = 'en';
+
+    function setLanguage(lang, btn) {
+      selectedLanguage = lang;
+      document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    }
+
+    function switchTab(tab) {
+      document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', (i === 0) === (tab === 'pdf')));
+      document.getElementById('panel-pdf').classList.toggle('active', tab === 'pdf');
+      document.getElementById('panel-text').classList.toggle('active', tab === 'text');
+    }
+
+    function setLoading(loading) {
+      document.getElementById('spinner').classList.toggle('visible', loading);
+      document.querySelectorAll('.btn').forEach(b => b.disabled = loading);
+    }
+
+    function showError(msg) {
+      const el = document.getElementById('error-msg');
+      el.textContent = msg;
+      el.classList.add('visible');
+    }
+
+    function clearError() {
+      document.getElementById('error-msg').classList.remove('visible');
+    }
+
+    function renderResult(data) {
+      const scoreEl = document.getElementById('score-circle');
+      scoreEl.textContent = data.match_score;
+
+      const hue = Math.round((data.match_score / 100) * 120);
+      scoreEl.style.borderColor = `hsl(${hue}, 70%, 55%)`;
+
+      document.getElementById('summary-text').textContent = data.summary;
+
+      const fill = (id, items) => {
+        const ul = document.getElementById(id);
+        ul.innerHTML = items.map(i => `<li>${i}</li>`).join('');
+      };
+      fill('strengths-list', data.strengths);
+      fill('weaknesses-list', data.weaknesses);
+      fill('recommendations-list', data.recommendations);
+
+      document.getElementById('result').classList.add('visible');
+      document.getElementById('result').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    async function submitText(e) {
+      e.preventDefault();
+      clearError();
+      document.getElementById('result').classList.remove('visible');
+      setLoading(true);
+      try {
+        const res = await fetch('/analyze/text', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            cv_text: document.getElementById('cv-text').value,
+            job_url: document.getElementById('job-url-text').value,
+            language: selectedLanguage,
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || 'Unknown error');
+        renderResult(data);
+      } catch (err) {
+        showError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    async function submitPdf(e) {
+      e.preventDefault();
+      clearError();
+      document.getElementById('result').classList.remove('visible');
+      setLoading(true);
+      try {
+        const fd = new FormData();
+        fd.append('job_url', document.getElementById('job-url-pdf').value);
+        fd.append('cv_file', document.getElementById('cv-file').files[0]);
+        fd.append('language', selectedLanguage);
+        const res = await fetch('/analyze/pdf', { method: 'POST', body: fd });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || 'Unknown error');
+        renderResult(data);
+      } catch (err) {
+        showError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    }
+  </script>
+</body>
+</html>

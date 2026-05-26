@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cv-fit-score
+  namespace: default
+  labels:
+    app: cv-fit-score
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cv-fit-score
+  template:
+    metadata:
+      labels:
+        app: cv-fit-score
+    spec:
+      containers:
+        - name: cv-fit-score
+          image: localhost:5000/cv-fit-score:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8000
+          envFrom:
+            - configMapRef:
+                name: cv-fit-score-config
+            - secretRef:
+                name: cv-fit-score-secret
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 15
+            periodSeconds: 20

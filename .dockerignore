@@ -1,0 +1,8 @@
+.env
+__pycache__
+*.pyc
+*.pyo
+.venv
+.git
+k8s/
+*.md
