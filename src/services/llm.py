@@ -20,7 +20,10 @@ _LANGUAGE_INSTRUCTION = {
     ),
 }
 
-_SYSTEM_PROMPT = """\
+
+def _build_system_prompt(language: Literal["en", "sv"]) -> str:
+    lang_instruction = _LANGUAGE_INSTRUCTION[language]
+    return f"""\
 You are an expert technical recruiter and career coach.
 Analyze the provided CV against the job description and return a JSON
 object with exactly these fields:
@@ -39,7 +42,7 @@ Rules:
 - weaknesses: 2-4 genuine gaps — be honest but constructive
 - recommendations: 2-4 actionable steps the candidate can take
 - summary: 2-3 sentences max
-- {language_instruction}
+- {lang_instruction}
 - Respond with ONLY the JSON object, no other text
 """
 
@@ -51,14 +54,9 @@ async def analyze_fit(
 ) -> FitScoreResponse:
     client = AsyncGroq(api_key=get_settings().groq_api_key)
 
-    system_prompt = _SYSTEM_PROMPT.format(
-        language_instruction=_LANGUAGE_INSTRUCTION[language]
-    )
+    system_prompt = _build_system_prompt(language)
 
-    user_message = (
-        f"## CV\n{cv_text}\n\n"
-        f"## Job Description\n{job_description}"
-    )
+    user_message = f"## CV\n{cv_text}\n\n## Job Description\n{job_description}"
 
     completion = await client.chat.completions.create(
         model=_MODEL,

@@ -64,14 +64,32 @@ async def test_scrape_strips_script_and_style_tags():
 
 
 async def test_scrape_raises_on_too_short_content():
-    mock_client = _make_mock_client(
-        "<html><body><p>Hi</p></body></html>"
-    )
+    mock_client = _make_mock_client("<html><body><p>Hi</p></body></html>")
     with patch(
         "src.services.scraper.httpx.AsyncClient", return_value=mock_client
     ):
         with pytest.raises(ValueError, match="meaningful content"):
             await scrape_job_description("https://example.com/jobs/1")
+
+
+async def test_scrape_rejects_non_http_scheme():
+    with pytest.raises(ValueError, match="http/https"):
+        await scrape_job_description("ftp://example.com/jobs/1")
+
+
+async def test_scrape_rejects_missing_hostname():
+    with pytest.raises(ValueError, match="missing hostname"):
+        await scrape_job_description("http:///path")
+
+
+async def test_scrape_rejects_localhost():
+    with pytest.raises(ValueError, match="Internal"):
+        await scrape_job_description("http://localhost/jobs/1")
+
+
+async def test_scrape_rejects_private_ip():
+    with pytest.raises(ValueError, match="Internal"):
+        await scrape_job_description("http://192.168.1.1/jobs/1")
 
 
 async def test_scrape_raises_on_http_error():

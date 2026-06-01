@@ -102,6 +102,91 @@ kubectl rollout restart deployment/cv-fit-score
 
 ---
 
+## Architecture
+
+### Request Flow
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant FastAPI
+    participant Scraper
+    participant PDF
+    participant LLM as Groq LLM
+
+    Client->>FastAPI: POST /analyze/text<br/>{cv_text, job_url, language}
+    FastAPI->>Scraper: scrape_job_description(job_url)
+    Scraper->>Scraper: _validate_url()
+    Scraper-->>FastAPI: job_description (str)
+    FastAPI->>LLM: analyze_fit(cv_text, job_description, language)
+    LLM-->>FastAPI: FitScoreResponse (JSON)
+    FastAPI-->>Client: 200 OK {match_score, strengths, ...}
+
+    Client->>FastAPI: POST /analyze/pdf<br/>{cv_file, job_url, language}
+    FastAPI->>PDF: extract_text_from_pdf(bytes)
+    PDF-->>FastAPI: cv_text (str)
+    FastAPI->>Scraper: scrape_job_description(job_url)
+    Scraper-->>FastAPI: job_description (str)
+    FastAPI->>LLM: analyze_fit(cv_text, job_description, language)
+    LLM-->>FastAPI: FitScoreResponse (JSON)
+    FastAPI-->>Client: 200 OK {match_score, strengths, ...}
+```
+
+### Component Overview
+
+```mermaid
+graph TD
+    subgraph API["FastAPI Application"]
+        main["main.py\nRoutes & Endpoints"]
+        models["models.py\nPydantic Schemas"]
+        config["config.py\nSettings / Env"]
+    end
+
+    subgraph Services["Services"]
+        scraper["scraper.py\nHTTP + BeautifulSoup"]
+        pdf["pdf.py\npdfplumber"]
+        llm["llm.py\nAsyncGroq Client"]
+    end
+
+    main --> models
+    main --> config
+    main --> scraper
+    main --> pdf
+    main --> llm
+    llm --> config
+
+    scraper -->|"httpx (async)"| JobSite["Job Posting\n(external URL)"]
+    llm -->|"REST API"| Groq["Groq API\nllama-3.3-70b-versatile"]
+```
+
+### Deployment Architecture
+
+```mermaid
+graph LR
+    subgraph Local["Local Registry"]
+        registry["Docker Registry\nlocalhost:5000"]
+    end
+
+    subgraph K8s["Kubernetes Cluster"]
+        deployment["Deployment\ncv-fit-score"]
+        service["ClusterIP Service\nport 8000"]
+        configmap["ConfigMap\nenv vars"]
+        secret["Secret\nGROQ_API_KEY"]
+        pod["Pod\nFastAPI :8000"]
+
+        deployment --> pod
+        service --> pod
+        configmap --> pod
+        secret --> pod
+    end
+
+    registry -->|"image pull"| deployment
+    portfwd["kubectl port-forward\nlocalhost:8080"] --> service
+    user["Browser / Client"] --> portfwd
+```
+
+---
+
 ## Stack
 
 | Layer | Technology |

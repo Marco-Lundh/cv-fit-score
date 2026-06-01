@@ -258,9 +258,9 @@
     </header>
 
     <div class="card">
-      <div class="tabs">
-        <button class="tab active" onclick="switchTab('pdf')">PDF Upload</button>
-        <button class="tab" onclick="switchTab('text')">Plain Text</button>
+      <div class="tabs" role="tablist">
+        <button class="tab active" role="tab" aria-selected="true" onclick="switchTab('pdf')">PDF Upload</button>
+        <button class="tab" role="tab" aria-selected="false" onclick="switchTab('text')">Plain Text</button>
       </div>
 
       <div style="display:flex; align-items:center; gap:0.75rem; margin-bottom:1.5rem;">
@@ -307,7 +307,7 @@
 
     <div class="card result" id="result">
       <div class="score-ring">
-        <div class="score-circle" id="score-circle">–</div>
+        <div class="score-circle" id="score-circle" aria-label="Match score">–</div>
         <span class="score-label">Match Score</span>
       </div>
 
@@ -347,7 +347,11 @@
     }
 
     function switchTab(tab) {
-      document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', (i === 0) === (tab === 'pdf')));
+      document.querySelectorAll('.tab').forEach((t, i) => {
+        const active = (i === 0) === (tab === 'pdf');
+        t.classList.toggle('active', active);
+        t.setAttribute('aria-selected', active);
+      });
       document.getElementById('panel-pdf').classList.toggle('active', tab === 'pdf');
       document.getElementById('panel-text').classList.toggle('active', tab === 'text');
     }
@@ -378,7 +382,11 @@
 
       const fill = (id, items) => {
         const ul = document.getElementById(id);
-        ul.innerHTML = items.map(i => `<li>${i}</li>`).join('');
+        ul.replaceChildren(...items.map(i => {
+          const li = document.createElement('li');
+          li.textContent = i;
+          return li;
+        }));
       };
       fill('strengths-list', data.strengths);
       fill('weaknesses-list', data.weaknesses);

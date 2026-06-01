@@ -2,7 +2,6 @@ import io
 from http import HTTPStatus
 from typing import Literal
 
-
 from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
@@ -22,7 +21,7 @@ templates = Jinja2Templates(directory="src/templates")
 
 
 @app.get("/", response_class=HTMLResponse, include_in_schema=False)
-async def index(request: Request):
+async def index(request: Request) -> HTMLResponse:
     return templates.TemplateResponse(request, "index.html")
 
 
@@ -31,7 +30,7 @@ async def index(request: Request):
     response_model=FitScoreResponse,
     summary="Analyze CV from plain text",
 )
-async def analyze_text(body: AnalyzeTextRequest):
+async def analyze_text(body: AnalyzeTextRequest) -> FitScoreResponse:
     try:
         job_description = await scrape_job_description(body.job_url)
     except Exception as exc:
@@ -60,7 +59,7 @@ async def analyze_pdf(
     language: Literal["en", "sv"] = Form(
         "en", description="Response language"
     ),
-):
+) -> FitScoreResponse:
     if cv_file.content_type != "application/pdf":
         raise HTTPException(
             status_code=HTTPStatus.UNPROCESSABLE_ENTITY,
@@ -94,5 +93,5 @@ async def analyze_pdf(
 
 
 @app.get("/health", include_in_schema=False)
-async def health():
+async def health() -> dict[str, str]:
     return {"status": "ok"}
