@@ -4,6 +4,8 @@ from urllib.parse import urlparse
 import httpx
 from bs4 import BeautifulSoup
 
+from src.services.tls import SSL_CONTEXT
+
 _HEADERS = {
     "User-Agent": (
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
@@ -40,7 +42,7 @@ def _validate_url(url: str) -> None:
 async def scrape_job_description(url: str) -> str:
     _validate_url(url)
     async with httpx.AsyncClient(
-        follow_redirects=True, timeout=_TIMEOUT
+        follow_redirects=True, timeout=_TIMEOUT, verify=SSL_CONTEXT
     ) as client:
         response = await client.get(url, headers=_HEADERS)
         response.raise_for_status()

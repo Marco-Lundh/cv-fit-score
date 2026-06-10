@@ -5,6 +5,7 @@ import pytest
 
 from src.models import FitScoreResponse
 from src.services.llm import analyze_fit
+from src.services.tls import SSL_CONTEXT
 
 _MOCK_DATA = {
     "match_score": 78,
@@ -36,6 +37,28 @@ async def test_analyze_fit_returns_fit_score_response():
     assert isinstance(result, FitScoreResponse)
     assert result.match_score == 78
     assert "Python expertise" in result.strengths
+
+
+async def test_analyze_fit_uses_os_trust_store():
+    http_client = AsyncMock()
+    http_client.__aenter__ = AsyncMock(return_value=http_client)
+    http_client.__aexit__ = AsyncMock(return_value=False)
+    mock_groq = AsyncMock()
+    mock_groq.chat.completions.create = AsyncMock(
+        return_value=_make_completion(_MOCK_DATA)
+    )
+    with (
+        patch(
+            "src.services.llm.httpx.AsyncClient", return_value=http_client
+        ) as mock_ctor,
+        patch("src.services.llm.AsyncGroq", return_value=mock_groq),
+    ):
+        await analyze_fit(
+            cv_text="CV content here.",
+            job_description="Job description here.",
+        )
+    assert mock_ctor.call_args.kwargs["verify"] is SSL_CONTEXT
+    http_client.__aexit__.assert_awaited_once()
 
 
 async def test_analyze_fit_english_language_instruction():

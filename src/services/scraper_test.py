@@ -4,6 +4,7 @@ import httpx
 import pytest
 
 from src.services.scraper import scrape_job_description
+from src.services.tls import SSL_CONTEXT
 
 _JOB_HTML = """
 <html><head><title>Software Engineer</title></head>
@@ -43,6 +44,15 @@ async def test_scrape_returns_cleaned_text():
     assert "FastAPI" in result
     assert "Navigation links" not in result
     assert "Footer content" not in result
+
+
+async def test_scrape_uses_os_trust_store():
+    mock_client = _make_mock_client(_JOB_HTML)
+    with patch(
+        "src.services.scraper.httpx.AsyncClient", return_value=mock_client
+    ) as mock_ctor:
+        await scrape_job_description("https://example.com/jobs/1")
+    assert mock_ctor.call_args.kwargs["verify"] is SSL_CONTEXT
 
 
 async def test_scrape_strips_script_and_style_tags():

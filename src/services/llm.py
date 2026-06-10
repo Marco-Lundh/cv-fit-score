@@ -1,10 +1,12 @@
 import json
 from typing import Literal
 
+import httpx
 from groq import AsyncGroq
 
 from src.config import get_settings
 from src.models import FitScoreResponse
+from src.services.tls import SSL_CONTEXT
 
 _MODEL = "llama-3.3-70b-versatile"
 _TEMPERATURE = 0.3
@@ -52,21 +54,24 @@ async def analyze_fit(
     job_description: str,
     language: Literal["en", "sv"] = "en",
 ) -> FitScoreResponse:
-    client = AsyncGroq(api_key=get_settings().groq_api_key)
-
     system_prompt = _build_system_prompt(language)
 
     user_message = f"## CV\n{cv_text}\n\n## Job Description\n{job_description}"
 
-    completion = await client.chat.completions.create(
-        model=_MODEL,
-        messages=[
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_message},
-        ],
-        response_format={"type": "json_object"},
-        temperature=_TEMPERATURE,
-    )
+    async with httpx.AsyncClient(verify=SSL_CONTEXT) as http_client:
+        client = AsyncGroq(
+            api_key=get_settings().groq_api_key,
+            http_client=http_client,
+        )
+        completion = await client.chat.completions.create(
+            model=_MODEL,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_message},
+            ],
+            response_format={"type": "json_object"},
+            temperature=_TEMPERATURE,
+        )
 
     raw = completion.choices[0].message.content
     if raw is None:
